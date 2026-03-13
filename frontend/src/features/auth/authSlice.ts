@@ -59,6 +59,7 @@ const authSlice = createSlice({
         localStorage.setItem('token', action.payload.token);
       })
       .addCase(loadProfile.fulfilled, (state, action) => {
+        state.status = 'idle';
         const profile = action.payload;
         if (!profile) return;
         state.user = { username: profile.email, role: profile.role };

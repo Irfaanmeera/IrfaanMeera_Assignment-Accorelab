@@ -16,6 +16,7 @@ import { deletePaymentRemote, fetchPayments, updatePaymentRemote } from '@/featu
 import { editPaymentSchema } from '@/lib/validations';
 import type { Payment, PaymentMethod } from '@/types/payment.types';
 import AddPaymentModal from './AddPaymentModal';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const methods: PaymentMethod[] = ['Cash', 'Bank', 'Card'];
 
@@ -187,23 +188,27 @@ export default function PaymentGrid() {
                 </>
               ) : (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <button
+                    type="button"
                     aria-label="Edit payment"
                     onClick={() => {
                       setEditingId(p.id);
                       setDraft({});
                       setEditError(null);
                     }}
+                    className="rounded p-1.5 hover:bg-slate-100"
                   >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                    <Pencil className="h-4 w-4" style={{ color: '#1F7DC2' }} />
+                  </button>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button size="sm" variant="destructive" aria-label="Delete payment">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <button
+                        type="button"
+                        aria-label="Delete payment"
+                        className="rounded p-1.5 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
@@ -250,20 +255,28 @@ export default function PaymentGrid() {
   });
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-lg font-semibold text-slate-900">Payments</div>
+          <h2 className="text-xl font-semibold tracking-tight text-slate-900">Payments</h2>
+         
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border px-2 py-1">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1.5">
             <Search className="h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search receipt, invoice, customer..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSearchInput(v);
+                if (v === '' && search) {
+                  setSearch('');
+                  setPageState(1);
+                }
+              }}
               onKeyDown={(e) => e.key === 'Enter' && applySearch()}
-              className="h-8 w-48 border-0 focus-visible:ring-0"
+              className="h-8 w-48 border-0 bg-transparent focus-visible:ring-0"
             />
           </div>
           <Button size="sm" variant="secondary" onClick={applySearch}>
@@ -290,7 +303,7 @@ export default function PaymentGrid() {
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="border-b text-left text-slate-600">
+          <thead className="border-b border-slate-200 text-left text-slate-600">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((header) => (
@@ -302,8 +315,21 @@ export default function PaymentGrid() {
             ))}
           </thead>
           <tbody>
+            {status === 'loading' ? (
+              Array.from({ length: gridPageSize }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="border-b border-slate-200">
+                  <td className="p-2"><Skeleton className="h-5 w-28" /></td>
+                  <td className="p-2"><Skeleton className="h-5 w-24" /></td>
+                  <td className="p-2"><Skeleton className="h-5 w-36" /></td>
+                  <td className="p-2 text-right"><Skeleton className="ml-auto h-5 w-16" /></td>
+                  <td className="p-2"><Skeleton className="h-5 w-14" /></td>
+                  <td className="p-2 text-right"><Skeleton className="ml-auto h-5 w-16" /></td>
+                </tr>
+              ))
+            ) : (
+            <>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b hover:bg-slate-50">
+              <tr key={row.id} className="border-b border-slate-200 hover:bg-slate-50">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="p-2 align-middle">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -317,6 +343,8 @@ export default function PaymentGrid() {
                   No payments yet.
                 </td>
               </tr>
+            )}
+            </>
             )}
           </tbody>
         </table>

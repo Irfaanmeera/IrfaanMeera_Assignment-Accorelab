@@ -105,7 +105,7 @@ const invoicesSlice = createSlice({
       .addCase(deleteInvoiceRemote.fulfilled, (state, action) => {
         state.invoices = state.invoices.filter((i) => i.id !== action.payload);
       })
-      .addMatcher(isAnyOf(fetchInvoices.pending, createInvoice.pending, updateInvoiceRemote.pending, deleteInvoiceRemote.pending), (state) => {
+      .addCase(fetchInvoices.pending, (state) => {
         state.status = 'loading';
         state.error = undefined;
       })

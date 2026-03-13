@@ -69,7 +69,7 @@ export default function AddPaymentModal() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>Add payment</Button>
+        <Button className="text-white hover:opacity-90" style={{ backgroundColor: '#1F7DC2' }}>Add payment</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

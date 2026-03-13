@@ -12,6 +12,7 @@ import { deleteInvoiceRemote, fetchInvoices, updateInvoiceRemote } from '@/featu
 import { editInvoiceSchema } from '@/lib/validations';
 import AddInvoiceModal from './AddInvoiceModal';
 import { CustomerSearchCombobox } from '@/components/customers/CustomerSearchCombobox';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type SortKey = 'invoiceNo' | 'customerName' | 'invoiceDate' | 'amount' | 'paidAmount' | 'balance' | 'createdAt';
 
@@ -71,20 +72,28 @@ export default function InvoiceGrid() {
   }
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-lg font-semibold text-slate-900">Invoices</div>
+          <h2 className="text-xl font-semibold tracking-tight text-slate-900">Invoices</h2>
+          
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border px-2 py-1">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1.5">
             <Search className="h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search customer or invoice no..."
+              placeholder="Search customer or invoice..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSearchInput(v);
+                if (v === '' && search) {
+                  setSearch('');
+                  setPageState(1);
+                }
+              }}
               onKeyDown={(e) => e.key === 'Enter' && applySearch()}
-              className="h-8 w-48 border-0 focus-visible:ring-0"
+              className="h-8 w-48 border-0 bg-transparent focus-visible:ring-0"
             />
           </div>
           <Button size="sm" variant="secondary" onClick={applySearch}>
@@ -123,6 +132,20 @@ export default function InvoiceGrid() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {status === 'loading' ? (
+              Array.from({ length: gridPageSize }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-5 w-16" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-5 w-14" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-5 w-14" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-5 w-16" /></TableCell>
+                </TableRow>
+              ))
+            ) : (
+            <>
             {paged.map((inv) => {
               const isEditing = editingId === inv.id;
               return (
@@ -206,24 +229,28 @@ export default function InvoiceGrid() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
                           aria-label="Edit invoice"
                           onClick={() => {
                             setEditingId(inv.id);
                             setDraft({});
                             setEditError(null);
                           }}
+                          className="rounded p-1.5 hover:bg-slate-100"
                         >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                          <Pencil className="h-4 w-4" style={{ color: '#1F7DC2' }} />
+                        </button>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="destructive" aria-label="Delete invoice">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <button
+                              type="button"
+                              aria-label="Delete invoice"
+                              className="rounded p-1.5 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
@@ -255,9 +282,9 @@ export default function InvoiceGrid() {
                         </Dialog>
                       </div>
                     )}
-                  </TableCell>
-                </TableRow>
-              );
+                </TableCell>
+              </TableRow>
+            );
             })}
             {paged.length === 0 && (
               <TableRow>
@@ -265,6 +292,8 @@ export default function InvoiceGrid() {
                   No invoices yet.
                 </TableCell>
               </TableRow>
+            )}
+            </>
             )}
           </TableBody>
         </Table>

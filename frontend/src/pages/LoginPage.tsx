@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDispatch, useSelector } from 'react-redux';
@@ -35,49 +36,74 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-slate-50 p-6">
-      <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold text-slate-900">Login</h1>
-      
-
-        <div className="mt-6 space-y-3">
-          <div>
-            <div className="mb-1 text-sm font-medium text-slate-700">Email</div>
-            <Input
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors((p) => ({ ...p, email: undefined }));
-              }}
-              placeholder="email"
-              className={errors.email ? 'border-red-500' : ''}
-            />
-            {errors.email && <div className="mt-1 text-sm text-red-600">{errors.email}</div>}
-          </div>
-          <div>
-            <div className="mb-1 text-sm font-medium text-slate-700">Password</div>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (errors.password) setErrors((p) => ({ ...p, password: undefined }));
-              }}
-              placeholder="password"
-              className={errors.password ? 'border-red-500' : ''}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            />
-            {errors.password && <div className="mt-1 text-sm text-red-600">{errors.password}</div>}
+    <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
+      <div className="relative w-full max-w-md">
+        <div className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur-sm">
+          <div className="mb-8 flex flex-col items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg">
+              <FileText className="h-8 w-8" strokeWidth={1.5} />
+            </div>
+            <div>
+              <h1 className="text-center text-2xl font-bold tracking-tight text-slate-900">Invoice Dashboard</h1>
+              <p className="mt-1 text-center text-sm text-slate-500">Sign in to continue</p>
+            </div>
           </div>
 
-          {error && <div className="text-sm text-red-600">{error}</div>}
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+              <Input
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors((p) => ({ ...p, email: undefined }));
+                }}
+                type="email"
+                placeholder="you@example.com"
+                className={`h-11 ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+              />
+              {errors.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors((p) => ({ ...p, password: undefined }));
+                }}
+                placeholder="••••••••"
+                className={`h-11 ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              />
+              {errors.password && <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>}
+            </div>
 
-          <Button className="w-full" disabled={status === 'loading'} onClick={handleSubmit}>
-            {status === 'loading' ? 'Logging in...' : 'Login'}
-          </Button>
+            {error && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <Button
+              className="mt-6 h-11 w-full bg-indigo-600 text-base font-medium hover:bg-indigo-700"
+              disabled={status === 'loading'}
+              onClick={handleSubmit}
+            >
+              {status === 'loading' ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Signing in...
+                </span>
+              ) : (
+                'Sign in'
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

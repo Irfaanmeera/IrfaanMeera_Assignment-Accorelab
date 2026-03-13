@@ -8,7 +8,7 @@ import { loadProfile } from '@/features/auth/authSlice';
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user, token, status } = useSelector((s: RootState) => s.auth);
+  const { user, token } = useSelector((s: RootState) => s.auth);
 
   useEffect(() => {
     if (token && !user) {
@@ -16,22 +16,11 @@ export default function App() {
     }
   }, [dispatch, token, user]);
 
-  // Restoring session: token exists but user not hydrated yet
-  const restoringSession = token && !user && status !== 'failed';
-
-  if (restoringSession) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-sm text-slate-500">Loading...</div>
-      </div>
-    );
-  }
-
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to={user ? '/' : '/login'} replace />} />
+      <Route path="/" element={token ? <Dashboard /> : user ? <Dashboard /> : <Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to={user || token ? '/' : '/login'} replace />} />
     </Routes>
   );
 }

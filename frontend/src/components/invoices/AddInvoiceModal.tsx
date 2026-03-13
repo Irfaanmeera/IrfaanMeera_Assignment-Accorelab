@@ -50,7 +50,7 @@ export default function AddInvoiceModal() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>Add invoice</Button>
+        <Button className="text-white hover:opacity-90" style={{ backgroundColor: '#1F7DC2' }}>Add invoice</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

@@ -97,7 +97,7 @@ const paymentsSlice = createSlice({
       .addCase(deletePaymentRemote.fulfilled, (state, action) => {
         state.payments = state.payments.filter((p) => p.id !== action.payload);
       })
-      .addMatcher(isAnyOf(fetchPayments.pending, createPayment.pending, updatePaymentRemote.pending, deletePaymentRemote.pending), (state) => {
+      .addCase(fetchPayments.pending, (state) => {
         state.status = 'loading';
         state.error = undefined;
       })
