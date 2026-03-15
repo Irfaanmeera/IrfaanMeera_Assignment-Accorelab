@@ -11,16 +11,25 @@ function generateInvoiceNo() {
   return `INV-${Date.now()}-${rand}`;
 }
 
-const SORT_KEYS = ['invoiceNo', 'customerName', 'invoiceDate', 'amount', 'paidAmount', 'balance', 'createdAt'] as const;
-type SortKey = (typeof SORT_KEYS)[number];
+function buildOrderBy(sortBy?: string, order?: string) {
+  const allowedFields = [
+    'invoiceNo',
+    'customerName',
+    'invoiceDate',
+    'amount',
+    'paidAmount',
+    'balance',
+    'createdAt',
+  ];
 
-function buildOrderBy(sortBy: string, order: string) {
-  const key = SORT_KEYS.includes(sortBy as SortKey) ? sortBy : 'createdAt';
-  const dir = order === 'asc' ? 'asc' : 'desc';
-  return { [key]: dir };
+  const key = allowedFields.includes(sortBy || '') ? sortBy : 'createdAt';
+  const direction = order === 'asc' ? 'asc' : 'desc';
+
+  return { [key as string]: direction };
 }
 
 export const invoiceRepository = {
+
   findAll: async (
     page: number,
     pageSize: number,
@@ -28,29 +37,37 @@ export const invoiceRepository = {
     sortBy?: string,
     order?: string
   ) => {
+
     const skip = (page - 1) * pageSize;
-    const where = search?.trim()
-      ? {
-          OR: [
-            { customerName: { contains: search.trim(), mode: 'insensitive' as const } },
-            { invoiceNo: { contains: search.trim(), mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
 
-    const orderBy = buildOrderBy(sortBy || 'createdAt', order || 'desc');
+    let where: any = {};
 
-    const [items, total] = await prisma.$transaction([
-      prisma.invoice.findMany({
-        where,
-        orderBy,
-        skip,
-        take: pageSize,
-      }),
-      prisma.invoice.count({ where }),
-    ]);
+    if (search) {
+      where = {
+        OR: [
+          { customerName: { contains: search, mode: 'insensitive' } },
+          { invoiceNo: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
 
-    return { items, total, page, pageSize };
+    const orderBy = buildOrderBy(sortBy, order);
+
+    const items = await prisma.invoice.findMany({
+      where,
+      orderBy,
+      skip,
+      take: pageSize,
+    });
+
+    const total = await prisma.invoice.count({ where });
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+    };
   },
 
   findById: async (id: string) => {
@@ -59,41 +76,11 @@ export const invoiceRepository = {
     });
   },
 
-  update: async (
-    id: string,
-    data: {
-      customerName?: string;
-      invoiceDate?: Date;
-      amount?: number;
-    }
-  ) => {
-    return prisma.$transaction(async (tx) => {
-      const current = await tx.invoice.findUnique({ where: { id } });
-      if (!current) {
-        const err = new Error('Invoice not found') as Error & { statusCode?: number };
-        err.statusCode = 404;
-        throw err;
-      }
-
-      const amount = typeof data.amount === 'number' ? data.amount : Number(current.amount);
-      const paid = Number(current.paidAmount);
-      const balance = amount - paid;
-
-      return tx.invoice.update({
-        where: { id },
-        data: {
-          customerName: data.customerName ?? current.customerName,
-          invoiceDate: data.invoiceDate ?? current.invoiceDate,
-          amount,
-          balance,
-        },
-      });
-    });
-  },
-
   create: async (data: CreateInvoiceInput) => {
+
     const invoiceNo = generateInvoiceNo();
     const amount = Number(data.amount) || 0;
+
     return prisma.invoice.create({
       data: {
         invoiceNo,
@@ -104,23 +91,74 @@ export const invoiceRepository = {
         balance: amount,
       },
     });
+
+  },
+
+  update: async (
+    id: string,
+    data: {
+      customerName?: string;
+      invoiceDate?: Date;
+      amount?: number;
+    }
+  ) => {
+
+    const current = await prisma.invoice.findUnique({
+      where: { id },
+    });
+
+    if (!current) {
+      throw new Error('Invoice not found');
+    }
+
+    const amount = data.amount !== undefined ? data.amount : Number(current.amount);
+    const paid = Number(current.paidAmount);
+    const balance = amount - paid;
+
+    return prisma.invoice.update({
+      where: { id },
+      data: {
+        customerName: data.customerName || current.customerName,
+        invoiceDate: data.invoiceDate || current.invoiceDate,
+        amount,
+        balance,
+      },
+    });
+
   },
 
   delete: async (id: string) => {
-    return prisma.invoice.delete({ where: { id } });
+    return prisma.invoice.delete({
+      where: { id },
+    });
   },
 
   findDistinctCustomerNames: async (search?: string, limit = 20) => {
-    const where = search?.trim()
-      ? { customerName: { contains: search.trim(), mode: 'insensitive' as const } }
-      : {};
+
+    let where: any = {};
+
+    if (search) {
+      where = {
+        customerName: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      };
+    }
+
     const invoices = await prisma.invoice.findMany({
       where,
-      select: { customerName: true },
+      select: {
+        customerName: true,
+      },
       distinct: ['customerName'],
-      orderBy: { customerName: 'asc' },
+      orderBy: {
+        customerName: 'asc',
+      },
       take: limit,
     });
-    return invoices.map((i) => i.customerName);
+
+    return invoices.map((invoice) => invoice.customerName);
   },
+
 };

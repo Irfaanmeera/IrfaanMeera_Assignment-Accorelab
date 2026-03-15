@@ -91,6 +91,9 @@ export default function AddInvoiceModal() {
             <Input
               inputMode="decimal"
               value={amount}
+              onFocus={() => {
+                if (amount === '0') setAmount('');
+              }}
               onChange={(e) => {
                 setAmount(e.target.value);
                 if (errors.amount) setErrors((p) => ({ ...p, amount: undefined }));
