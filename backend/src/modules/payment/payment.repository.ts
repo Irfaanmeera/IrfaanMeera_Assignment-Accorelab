@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import type { PaymentMethod } from '@prisma/client';
 
@@ -14,14 +13,23 @@ function generateReceiptNo() {
   return `RCPT-${Date.now()}-${rand}`;
 }
 
-const SORT_KEYS = ['receiptNo', 'paymentDate', 'amount', 'method', 'createdAt', 'invoiceNo'] as const;
-type SortKey = (typeof SORT_KEYS)[number];
+function buildOrderBy(sortBy?: string, order?: string): Record<string, 'asc' | 'desc'> | { invoice: { invoiceNo: 'asc' | 'desc' } } {
+  const allowedFields = [
+    'receiptNo',
+    'paymentDate',
+    'amount',
+    'method',
+    'createdAt',
+    'invoiceNo',
+  ];
 
-function buildOrderBy(sortBy: string, order?: string): Prisma.PaymentOrderByWithRelationInput {
-  const dir: Prisma.SortOrder = order === 'asc' ? 'asc' : 'desc';
-  if (sortBy === 'invoiceNo') return { invoice: { invoiceNo: dir } };
-  const key = SORT_KEYS.includes(sortBy as SortKey) ? sortBy : 'createdAt';
-  return { [key]: dir };
+  const key = allowedFields.includes(sortBy || '') ? sortBy : 'createdAt';
+  const direction: 'asc' | 'desc' = order === 'asc' ? 'asc' : 'desc';
+
+  if (key === 'invoiceNo') {
+    return { invoice: { invoiceNo: direction } };
+  }
+  return { [key as string]: direction };
 }
 
 export const paymentRepository = {
@@ -33,28 +41,31 @@ export const paymentRepository = {
     order?: string
   ) => {
     const skip = (page - 1) * pageSize;
-    const where = search?.trim()
-      ? {
-          OR: [
-            { receiptNo: { contains: search.trim(), mode: 'insensitive' as const } },
-            { invoice: { invoiceNo: { contains: search.trim(), mode: 'insensitive' as const } } },
-            { invoice: { customerName: { contains: search.trim(), mode: 'insensitive' as const } } },
-          ],
-        }
-      : {};
 
-    const orderBy = buildOrderBy(sortBy || 'createdAt', order || 'desc');
+    let where: any = {};
 
-    const [items, total] = await prisma.$transaction([
-      prisma.payment.findMany({
-        where,
-        orderBy,
-        include: { invoice: true },
-        skip,
-        take: pageSize,
-      }),
-      prisma.payment.count({ where }),
-    ]);
+    if (search?.trim()) {
+      const term = search.trim();
+      where = {
+        OR: [
+          { receiptNo: { contains: term, mode: 'insensitive' } },
+          { invoice: { invoiceNo: { contains: term, mode: 'insensitive' } } },
+          { invoice: { customerName: { contains: term, mode: 'insensitive' } } },
+        ],
+      };
+    }
+
+    const orderBy = buildOrderBy(sortBy, order);
+
+    const items = await prisma.payment.findMany({
+      where,
+      orderBy,
+      include: { invoice: true },
+      skip,
+      take: pageSize,
+    });
+
+    const total = await prisma.payment.count({ where });
 
     return { items, total, page, pageSize };
   },
@@ -70,27 +81,25 @@ export const paymentRepository = {
     const receiptNo = generateReceiptNo();
     const amount = Number(data.amount) || 0;
 
-    return prisma.$transaction(async (tx) => {
-      const payment = await tx.payment.create({
-        data: {
-          receiptNo,
-          paymentDate: data.paymentDate,
-          amount,
-          method: data.method,
-          invoiceId: data.invoiceId,
-        },
-      });
-
-      const invoice = await tx.invoice.update({
-        where: { id: data.invoiceId },
-        data: {
-          paidAmount: { increment: amount },
-          balance: { decrement: amount },
-        },
-      });
-
-      return { payment, invoice };
+    const payment = await prisma.payment.create({
+      data: {
+        receiptNo,
+        paymentDate: data.paymentDate,
+        amount,
+        method: data.method,
+        invoiceId: data.invoiceId,
+      },
     });
+
+    await prisma.invoice.update({
+      where: { id: data.invoiceId },
+      data: {
+        paidAmount: { increment: amount },
+        balance: { decrement: amount },
+      },
+    });
+
+    return { payment, invoice: await prisma.invoice.findUnique({ where: { id: data.invoiceId } }) };
   },
 
   updateAndReapplyToInvoice: async (
@@ -101,40 +110,57 @@ export const paymentRepository = {
       method?: PaymentMethod;
     }
   ) => {
-    return prisma.$transaction(async (tx) => {
-      const existing = await tx.payment.findUnique({ where: { id } });
-      if (!existing) {
-        const err = new Error('Payment not found') as Error & { statusCode?: number };
-        err.statusCode = 404;
-        throw err;
-      }
+    const existing = await prisma.payment.findUnique({ where: { id } });
+    if (!existing) {
+      const err = new Error('Payment not found') as Error & { statusCode?: number };
+      err.statusCode = 404;
+      throw err;
+    }
 
-      const oldAmount = Number(existing.amount);
-      const newAmount = typeof data.amount === 'number' ? data.amount : oldAmount;
-      const diff = newAmount - oldAmount;
+    const oldAmount = Number(existing.amount);
+    const newAmount = typeof data.amount === 'number' ? data.amount : oldAmount;
+    const diff = newAmount - oldAmount;
 
-      const payment = await tx.payment.update({
-        where: { id },
-        data: {
-          paymentDate: data.paymentDate ?? existing.paymentDate,
-          amount: newAmount,
-          method: data.method ?? existing.method,
-        },
-      });
-
-      const invoice = await tx.invoice.update({
-        where: { id: existing.invoiceId },
-        data: {
-          paidAmount: { increment: diff },
-          balance: { decrement: diff },
-        },
-      });
-
-      return { payment, invoice };
+    const payment = await prisma.payment.update({
+      where: { id },
+      data: {
+        paymentDate: data.paymentDate ?? existing.paymentDate,
+        amount: newAmount,
+        method: data.method ?? existing.method,
+      },
     });
+
+    await prisma.invoice.update({
+      where: { id: existing.invoiceId },
+      data: {
+        paidAmount: { increment: diff },
+        balance: { decrement: diff },
+      },
+    });
+
+    return { payment, invoice: await prisma.invoice.findUnique({ where: { id: existing.invoiceId } }) };
   },
 
   delete: async (id: string) => {
-    return prisma.payment.delete({ where: { id } });
+    const payment = await prisma.payment.findUnique({ where: { id } });
+    if (!payment) {
+      const err = new Error('Payment not found') as Error & { statusCode?: number };
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const amount = Number(payment.amount);
+
+    await prisma.payment.delete({ where: { id } });
+
+    await prisma.invoice.update({
+      where: { id: payment.invoiceId },
+      data: {
+        paidAmount: { decrement: amount },
+        balance: { increment: amount },
+      },
+    });
+
+    return payment;
   },
 };

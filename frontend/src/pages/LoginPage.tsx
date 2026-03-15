@@ -36,12 +36,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent" />
+    <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100/80 p-6">
       <div className="relative w-full max-w-md">
-        <div className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur-sm">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-8 shadow-lg">
           <div className="mb-8 flex flex-col items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl text-white shadow-md" style={{ backgroundColor: '#1F7DC2' }}>
               <FileText className="h-8 w-8" strokeWidth={1.5} />
             </div>
             <div>
@@ -88,7 +87,8 @@ export default function LoginPage() {
             )}
 
             <Button
-              className="mt-6 h-11 w-full bg-indigo-600 text-base font-medium hover:bg-indigo-700"
+              className="mt-6 h-11 w-full text-base font-medium text-white hover:opacity-90"
+              style={{ backgroundColor: '#1F7DC2' }}
               disabled={status === 'loading'}
               onClick={handleSubmit}
             >
