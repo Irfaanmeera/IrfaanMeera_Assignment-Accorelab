@@ -54,7 +54,7 @@ export async function createPaymentRequest(payload: {
 }
 
 export async function updatePaymentRequest(id: string, payload: { paymentDate?: string; amount?: number; method?: string }) {
-  const res = await api.put(`/api/payments/${id}`, payload);
+  const res = await api.patch(`/api/payments/${id}`, payload);
   const raw = res.data.data as { payment: PaymentRaw; invoice: { invoiceNo: string } };
   return mapPayment({ ...raw.payment, invoice: raw.invoice });
 }

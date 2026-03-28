@@ -11,7 +11,7 @@ router.get('/', asyncHandler(invoiceController.getAll));
 router.get('/customer-names', authorize('admin', 'sales'), asyncHandler(invoiceController.getCustomerNames));
 router.get('/:id', asyncHandler(invoiceController.getById));
 router.post('/', authorize('admin', 'sales'), asyncHandler(invoiceController.create));
-router.put('/:id', authorize('admin', 'sales'), asyncHandler(invoiceController.update));
+router.patch('/:id', authorize('admin', 'sales'), asyncHandler(invoiceController.update));
 router.delete('/:id', authorize('admin'), asyncHandler(invoiceController.delete));
 
 export const invoiceRoutes = router;

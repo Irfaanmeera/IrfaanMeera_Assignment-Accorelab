@@ -92,7 +92,7 @@ export default function InvoiceGrid() {
           <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-1.5">
             <Search className="h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search customer or invoice... (debounced)"
+              placeholder="Search customer or invoice..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="h-8 w-48 border-0 bg-transparent focus-visible:ring-0"

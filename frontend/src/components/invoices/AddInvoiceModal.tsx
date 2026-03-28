@@ -66,7 +66,7 @@ export default function AddInvoiceModal() {
                 setCustomerName(name);
                 if (errors.customerName) setErrors((p) => ({ ...p, customerName: undefined }));
               }}
-              placeholder="Search or add customer..."
+              placeholder="Search or type customer..."
               error={!!errors.customerName}
             />
             {errors.customerName && <div className="mt-1 text-sm text-red-600">{errors.customerName}</div>}

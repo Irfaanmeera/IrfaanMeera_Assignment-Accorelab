@@ -48,12 +48,9 @@ export const invoiceService = {
       throw err;
     }
 
-    const patch: { customerName?: string; invoiceDate?: Date; amount?: number } = {};
-    if (data.customerName) patch.customerName = data.customerName.trim();
-
-    if (typeof data.amount !== 'undefined') {
-      patch.amount = Number(data.amount) || 0;
-    }
+    const customerName = data.customerName?.trim();
+    const amount = typeof data.amount !== 'undefined' ? Number(data.amount) || 0 : undefined;
+    let invoiceDate: Date | undefined;
 
     if (data.invoiceDate) {
       const date = new Date(data.invoiceDate);
@@ -62,10 +59,10 @@ export const invoiceService = {
         err.statusCode = 400;
         throw err;
       }
-      patch.invoiceDate = date;
+      invoiceDate = date;
     }
 
-    return invoiceRepository.update(id, patch);
+    return invoiceRepository.update(id, { customerName, invoiceDate, amount });
   },
 
   delete: async (id: string) => {

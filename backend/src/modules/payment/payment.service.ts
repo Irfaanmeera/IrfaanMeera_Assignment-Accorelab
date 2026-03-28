@@ -55,11 +55,9 @@ export const paymentService = {
       throw err;
     }
 
-    const patch: { paymentDate?: Date; amount?: number; method?: PaymentMethod } = {};
-
-    if (typeof data.amount !== 'undefined') {
-      patch.amount = Number(data.amount) || 0;
-    }
+    const amount = typeof data.amount !== 'undefined' ? Number(data.amount) || 0 : undefined;
+    const method = data.method;
+    let paymentDate: Date | undefined;
 
     if (data.paymentDate) {
       const date = new Date(data.paymentDate);
@@ -68,14 +66,10 @@ export const paymentService = {
         err.statusCode = 400;
         throw err;
       }
-      patch.paymentDate = date;
+      paymentDate = date;
     }
 
-    if (data.method) {
-      patch.method = data.method;
-    }
-
-    return paymentRepository.updateAndReapplyToInvoice(id, patch);
+    return paymentRepository.updateAndReapplyToInvoice(id, { paymentDate, amount, method });
   },
 
   delete: async (_id: string) => {

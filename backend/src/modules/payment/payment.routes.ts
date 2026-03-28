@@ -10,7 +10,7 @@ router.use(authenticate);
 router.get('/', asyncHandler(paymentController.getAll));
 router.get('/:id', asyncHandler(paymentController.getById));
 router.post('/', authorize('admin', 'accounts'), asyncHandler(paymentController.create));
-router.put('/:id', authorize('admin', 'accounts'), asyncHandler(paymentController.update));
+router.patch('/:id', authorize('admin', 'accounts'), asyncHandler(paymentController.update));
 router.delete('/:id', authorize('admin', 'accounts'), asyncHandler(paymentController.delete));
 
 export const paymentRoutes = router;

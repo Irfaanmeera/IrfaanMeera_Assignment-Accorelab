@@ -65,7 +65,7 @@ export async function updateInvoiceRequest(
   id: string,
   payload: { customerName?: string; invoiceDate?: string; amount?: number }
 ): Promise<Invoice> {
-  const res = await api.put(`/api/invoices/${id}`, payload);
+  const res = await api.patch(`/api/invoices/${id}`, payload);
   return mapInvoice(res.data.data as InvoiceFromApi);
 }
 
